@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+    body {
+        background-image: url("img/timg.jpg");
+        filter: "progid:DXImageTransform.Microsoft.AlphaImageLoader(sizingMethod='scale')";
+        -moz-background-size: 100% 100%;
+        background-size: 100% 100%;
+    }
+    
+    .index {
+        width: 100%;
+    }
+    
+    .ind {
+        width: 660px;
+        height: 1320px;
+        margin: 120px 0 0 60px;
+        background-color: #000000;
+        position: relative;
+        float: left;
+    }
+    
+    .main {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        z-index: 10
+    }
+    
+    .mains {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        z-index: 9
+    }
+    
+    .main div,
+    .mains div {
+        width: 65px;
+        height: 65px;
+        float: left;
+        border-top: solid 1px rgb(62, 62, 62);
+        border-left: solid 1px rgb(62, 62, 62);
+    }
+    
+    .next {
+        width: 200px;
+        float: left;
+        margin: 120px 0 0 30px;
+    }
+    
+    .next_tit {
+        width: 200px;
+        height: 50px;
+        color: #000000;
+        font-size: 50px;
+        text-align: center;
+    }
+    
+    .next_ang {
+        width: 200px;
+        height: 200px;
+        margin-top: 50px;
+    }
+    
+    .next_ang div {
+        width: 50px;
+        height: 50px;
+        float: left;
+    }
+    
+    .score {
+        width: 200px;
+        margin-top: 50px;
+        color: #000000;
+        font-size: 50px;
+    }
+    
+    .score span {
+        color: #ff006b;
+    }
+    
+    .control {
+        width: 200px;
+        margin-top: 150px;
+    }
+    
+    .control a,
+    .direction a {
+        width: 200px;
+        height: 200px;
+        display: inline-block;
+        font-weight: bolder;
+        color: #000;
+        background-color: rgba(255, 251, 248, 0.52);
+        line-height: 200px;
+        border-radius: 50%;
+        text-decoration: none;
+        font-size: 3em;
+        text-align: center;
+    }
+    
+    .direction {
+        width: 100%;
+        text-align: center;
+        float: left;
+    }
+    
+    .direction a {
+        margin: 30px 15px;
+        font-size: 80px;
+    }
+    
+    .start {
+        position: absolute;
+        top: 0px;
+        background-color: rgba(0, 0, 0, 0.71);
+        z-index: 1002;
+        left: 0px;
+        width: 100%;
+        height: 100%;
+        color: #FFF;
+        font-size: 100px;
+        text-align: center;
+    }
+    </style>
+    <script src="js/jquery-1.11.2.min.js"></script>
+    <script src="js/jQuery.timers.js"></script>
+    <script>
+    $(function() {
+        getOneGraph();
+        $(".start").show();
+        // 初始化面板
+        for (var i = 0; i < 200; i++) {
+            $("#main").append("<div></div>");
+            $("#mains").append("<div></div>");
+        }
+        $("#start").click(function() {
+            $(this).animate({
+                top: "-100%"
+            }, 300);
+
+            showGraph();
+            $('body').everyTime("1s", 'A', downGraph);
+        });
+        $("#pause").click(function() {
+            $("#start").animate({
+                top: "0"
+            }, 300);
+            $('body').stopTime('A');
+        });
+        $("#rotate").click(function() {
+            getNextAngle();
+        });
+        $("#btn_left").click(function() {
+            turnLeft();
+        });
+        $("#btn_down").click(function() {
+            downGraph();
+        });
+        $("#btn_right").click(function() {
+            turnRight();
+        });
+        $(document).keydown(function(e) {
+            if (e.which == 38) {
+                getNextAngle();
+            } else if (e.which == 37) {
+                turnLeft();
+            } else if (e.which == 39) {
+                turnRight();
+            } else if (e.which == 40) {
+                downGraph();
+            }
+        });
+    });
+    var cols, cols1, angle = 0,
+        site = 0,
+        gr, score = 0;
+    // 一共有7种颜色，每种颜色对应一个图形
+    // 初始化7种颜色
+    var colors = ["#66ACFF", "#00CBBA", "#A784D2", "#C2FFAA", "#C66BCB", "#87D75A", "#E3B3FF"];
+    // 初始化7种图形，每种图形旋转的角度不一样数量也不一样，一共有19种角度
+    var graph = {};
+    graph[colors[0]] = [
+        [4, 15, 25, 14],
+        [5, 6, 15, 14]
+    ];
+    graph[colors[1]] = [
+        [5, 15, 24, 14],
+        [5, 16, 15, 4]
+    ];
+    graph[colors[2]] = [
+        [4, 5, 15, 14]
+    ];
+    graph[colors[3]] = [
+        [4, 6, 5, 3],
+        [4, 24, 34, 14]
+    ];
+    graph[colors[4]] = [
+        [5, 16, 15, 14],
+        [4, 15, 24, 14],
+        [5, 6, 15, 4],
+        [5, 15, 25, 14]
+    ];
+    graph[colors[5]] = [
+        [4, 16, 15, 14],
+        [4, 5, 24, 14],
+        [5, 6, 16, 4],
+        [5, 15, 25, 24]
+    ];
+    graph[colors[6]] = [
+        [6, 16, 15, 14],
+        [4, 25, 24, 14],
+        [5, 6, 14, 4],
+        [5, 15, 25, 4]
+    ];
+
+    var grach = {};
+
+    function showGraph() {
+        $("#main").find("div").css("background-color", "");
+        for (var i = 0; i < gr.length; i++) {
+            $("#main").find("div").eq(gr[i] + site).css("background-color", cols);
+        }
+    }
+    // gr 规律 0 上 1 右 2 下 3 左 用来验证是否可以左右上下移动
+    // 向左
+    function turnLeft() {
+        if ((gr[3] + site) % 10 == 0)
+            return;
+        if (downIsOk(site - 1))
+            return;
+        site--;
+        showGraph();
+    }
+    // 向右
+    function turnRight() {
+        if ((gr[1] + site) % 10 == 9)
+            return;
+        if (downIsOk(site + 1))
+            return;
+        site++;
+        showGraph();
+    }
+    // 下降
+    function downGraph() {
+        site += 10;
+        if (gr[2] + site > 199 || downIsOk(site)) {
+            if (gr[0] + site - 10 < 10) {
+                $('body').stopTime('A');
+                alert("gameover");
+                return;
+            }
+            setGrach();
+            getOneGraph();
+            site = 0;
+        }
+        showGraph();
+    }
+
+    function downIsOk(site) {
+        for (var i = 0; i < gr.length; i++) {
+            if (grach[gr[i] + site] != undefined && grach[gr[i] + site] != "") {
+                return true;
+            }
+        }
+        return false;
+    }
+    // 落到底部后显示
+    function setGrach() {
+        var s = 0;
+        for (var i = 0; i < gr.length; i++) {
+            $("#mains").find("div").eq(gr[i] + site - 10).css("background-color", cols);
+            grach[gr[i] + site - 10] = cols;
+        }
+
+        for (var i = 0; i < 20; i++) {
+            var k = 0;
+            for (var j = 0; j < 10; j++) {
+                if (grach[i * 10 + j] != undefined && grach[i * 10 + j] != "") {
+                    k++;
+                }
+            }
+            if (k == 10) {
+                s++;
+                for (var j = i * 10 + 9; j >= 0; j--) {
+                    grach[j] = grach[j - 10];
+                    $("#mains").find("div").eq(j).css("background-color", grach[j] == undefined ? "" : grach[j]);
+                }
+            }
+        }
+        if (s == 0) {
+            score++;
+        } else {
+            score += s * s * 10;
+        }
+        $("#score").html(score);
+    }
+    // 获取下一个角度
+    function getNextAngle() {
+        var g = graph[cols];
+        angle++;
+        if (angle >= g.length) {
+            angle = 0;
+        }
+        if ((gr[3] + site) % 10 == 0 && gr[3] % 10 > g[angle][3] % 10) {
+            site += (gr[3] % 10) - (g[angle][3] % 10);
+        } else if ((gr[1] + site) % 10 == 9 && gr[1] % 10 < g[angle][1] % 10) {
+            site -= (g[angle][1] % 10) - (gr[1] % 10);
+        } else if ((gr[1] + site) % 10 == 8 && (gr[3] + site) % 10 == 8) {
+            site--;
+        }
+        gr = g[angle];
+        showGraph();
+    }
+    // 根据颜色拿到该对应图形随机一个角度
+    function getOneGraph() {
+        getColors();
+        var g = graph[cols];
+        gr = g[angle];
+    }
+
+    function getAngle() {
+        angle = getRandom(graph[cols].length);
+    }
+    // 获取一个随机颜色
+    function getColors() {
+        cols = colors[getRandom(colors.length)];
+        getAngle();
+    }
+    // 传进来一个数组获取一个随机数
+    function getRandom(num) {
+        return Math.ceil(Math.random() * num) - 1;
+    }
+    </script>
+</head>
+
+<body>
+    <div class="start" id="start">
+        <div style="margin-top:50%;">START</div>
+        <div style="font-size:40px;">点击屏幕开始游戏</div>
+    </div>
+    <div class="index">
+        <div class="ind">
+            <div class="main" id="main"></div>
+            <div class="mains" id="mains"></div>
+        </div>
+        <div class="next">
+            <div class="next_tit">下一块</div>
+            <div class="next_ang">
+                <div></div>
+                <div style="background-color: black"></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div style="background-color: black"></div>
+                <div style="background-color: black"></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div style="background-color: black"></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="score">
+                当前得分
+                <br/><span id="score">0</span>
+            </div>
+            <div class="control">
+                <a class="pause" id="pause">PAUSE</a>
+            </div>
+            <div class="control">
+                <a class="rotate" id="rotate">ROT</a>
+            </div>
+        </div>
+        <div class="direction">
+            <a class="btn_left" id="btn_left">←</a>
+            <a class="btn_down" id="btn_down">↓</a>
+            <a class="btn_right" id="btn_right">→</a>
+        </div>
+    </div>
+</body>
+
+</html>
